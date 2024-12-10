@@ -1,0 +1,42 @@
+- hosts: localhost
+  connection: local
+  vars_files:
+    - ssh/ssh_priv.yml
+    - ssh/ssh_pub.yml
+  tasks:
+   - name: ansible create directory example
+     file:
+      path: ~/.ssh
+      state: directory
+   - name: "Copy SSH private key"
+     copy:
+       content: "{{ ssh_priv }}"
+       dest: ~/.ssh/id_rsa
+       mode: '0600'
+       force: yes
+   - name: "Copy SSH public key"
+     copy:
+       content: "{{ ssh_pub }}"
+       dest: ~/.ssh/id_rsa.pub
+       mode: '0600'
+       force: yes
+   - name: "Getting the sha256 checksum from PRIVATE key"
+     stat:
+      path: ~/.ssh/id_rsa
+      checksum_algorithm: sha256
+      get_checksum: yes
+     register: privatekeychecksum
+   - name: "Verifying the sha256 checksum from PRIVATE key"
+     fail:
+      msg: "WRONG! checksum"
+     when: privatekeychecksum.stat.checksum != '99c76fd7265837403f70b3733eacff69b3583a6365de978987ee2b3cd8c2828c'
+   - name: "Getting the sha256 checksum from PUBLIC key"
+     stat:
+      path: ~/.ssh/id_rsa.pub
+      checksum_algorithm: sha256
+      get_checksum: yes
+     register: publickeychecksum
+   - name: "Verifying the sha256 checksum from PUBLIC key"
+     fail:
+      msg: "WRONG! checksum"
+     when: publickeychecksum.stat.checksum != '6036eebd790056ad3acf065198dd80162c6995c95e2789002b99e890695ebb63'
